@@ -10,7 +10,6 @@
  * D21 - FIll LED
  */
 
-
 #include "DHT.h"
 #include <EEPROM.h>
 
@@ -67,7 +66,7 @@ void writeFloat(unsigned int addr, float x) {
     byte b[4];
     float f;
     } data;
-    
+
   data.f = x;
   for(int i = 0; i < 4; i++) {
     EEPROM.write(addr+i, data.b[i]);
@@ -140,7 +139,7 @@ void doHumidControl(float curHumidity) {
       if (curHumidity<midThreshold) {
         setDryer(0);
         currentControlState = 0;
-      } 
+      }
       break;
     case 2:
       //currently weting
@@ -160,7 +159,7 @@ void setMidThreshold() {
 }
 
 void setup() {
-  
+
   //setup pins
   pinMode(POWER_LED, OUTPUT);
   pinMode(DRYER_RELAY, OUTPUT);
@@ -169,7 +168,7 @@ void setup() {
 
   //start sensor library
   dht.begin();
-  
+
   //turn on Power Indicator
   digitalWrite(POWER_LED,HIGH);
 
@@ -179,7 +178,7 @@ void setup() {
     delay(500);
     digitalWrite(POWER_LED,HIGH);
     delay(500);
-   } 
+   }
 
   //open serial port to host
   Serial.begin( 9600 );
@@ -199,7 +198,7 @@ void setup() {
   delay(200);
   Serial1.println("AT+HTTPPH=/update"); //protocol header path
 
-  //readEEPROMValues(); 
+  //readEEPROMValues();
 
   //ensure IO state is correct for other pins
   analogWrite(HUMID_LED, 0);
@@ -211,7 +210,7 @@ void setup() {
   //blink Power LED to confirm bootup
   digitalWrite(POWER_LED,LOW);
   delay(150);
-  digitalWrite(POWER_LED,HIGH); 
+  digitalWrite(POWER_LED,HIGH);
 
   loopCounter = 100000;
 
@@ -221,9 +220,9 @@ void setup() {
 
 void loop() {
   loopCounter++;
-  
+
   serialEvent(); //process any serial data
-  
+
   if (stringComplete) { //if a complete new line has been received on the serial port.
     String inCommand =  inputString.substring(0,1);//inputString first character
     char inCommandChar[2];
@@ -233,7 +232,7 @@ void loop() {
     int datLength = inData.length();
     inData = inData.substring(0,datLength-1); //remove last character
     Serial.println(inData);
-    
+
     switch (inCommandChar[0]) {
       case 'U':
         //set upperThreshold
@@ -256,7 +255,7 @@ void loop() {
         Serial.print("L:");
         Serial.print(lowerThreshold);
         Serial.print("M:");
-        Serial.print(midThreshold);        
+        Serial.print(midThreshold);
         Serial.print("U:");
         Serial.print(upperThreshold);
         Serial.println("OK");
@@ -284,12 +283,12 @@ void loop() {
       default:
         Serial.println("???");
     }
-        
+
     // clear the string:
     inputString = "";
     stringComplete = false;
   } //end of handling string if statement
-  
+
   //check water level
   int waterLevel = readWaterLevel();
 
@@ -300,18 +299,18 @@ void loop() {
     digitalWrite(FILL_LED,LOW);
   }
 
-  
+
   if (loopCounter>=30000) {  //wait for approximately 30 seconds
     loopCounter = 0;
-    
+
     // read temperature sensor
     float currentTemperature = dht.readTemperature();
     float currentHumidity  = dht.readHumidity();
-  
+
     // do humidity control
     doHumidControl(currentHumidity);
-  
-    // report state to internets 
+
+    // report state to internets
     updateSystemState(currentTemperature, currentHumidity, waterLevel, currentControlState);
 
   }
@@ -358,7 +357,7 @@ void updateSystemState(float temperature, float humidity, int wLevel, int contro
   publishString += "&field7=" + String(upperThreshold);
   //Serial.println(publishString);
   Serial1.println(publishString);
-  
+
 }
 
 /*
